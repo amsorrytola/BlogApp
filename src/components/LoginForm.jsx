@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import Input from "./Input";
-import authService from "../appwrite/auth.js"
+import authService from "../appwrite/auth.js";
 import { useDispatch } from "react-redux";
 import { login } from "../store/authSlice";
 import { useNavigate } from "react-router";
 
-
 export default function LoginForm() {
-  
-  const {register,handleSubmit,watch,formState: { errors }} = useForm();
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -31,27 +34,25 @@ export default function LoginForm() {
     });
   };
 
-  const onSubmit = async(data) => {
+  const onSubmit = async (data) => {
     try {
       console.log(data);
       const session = await authService.login(data);
-      if(session){
+      if (session) {
         const userData = await authService.getCurrentUser();
-        console.log(userData)
-        if(userData) {
-            dispatch(login(userData));
-            navigate("/");
+        console.log(userData);
+        if (userData) {
+          dispatch(login(userData));
+          navigate("/");
         }
-      } 
+      }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-md mx-auto">
-      
-
       <div className="mb-4">
         <Input
           type="email"
@@ -81,7 +82,9 @@ export default function LoginForm() {
           className="w-full p-2 border rounded"
         />
         {errors.password && (
-          <span className="text-red-500 text-sm">{errors.password.message}</span>
+          <span className="text-red-500 text-sm">
+            {errors.password.message}
+          </span>
         )}
       </div>
 
@@ -99,14 +102,16 @@ export default function LoginForm() {
               passwordErrors.uppercase ? "text-green-500" : "text-red-500"
             }`}
           >
-            {passwordErrors.uppercase ? "✔" : "❌"} At least one uppercase letter
+            {passwordErrors.uppercase ? "✔" : "❌"} At least one uppercase
+            letter
           </li>
           <li
             className={`${
               passwordErrors.lowercase ? "text-green-500" : "text-red-500"
             }`}
           >
-            {passwordErrors.lowercase ? "✔" : "❌"} At least one lowercase letter
+            {passwordErrors.lowercase ? "✔" : "❌"} At least one lowercase
+            letter
           </li>
           <li
             className={`${
@@ -125,7 +130,9 @@ export default function LoginForm() {
         </ul>
       </div>
 
-      <button type="submit" className="bg-blue-500 text-white p-2 rounded" >Sing In </button>
+      <button type="submit" className="bg-blue-500 text-white p-2 rounded">
+        Sing In{" "}
+      </button>
     </form>
   );
 }
