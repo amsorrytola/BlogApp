@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect } from "react";
-import Input from "./Input.jsx";
+import Input from "../Input.jsx";
+import Button from "../Button.jsx";
+import RTE from "../RTE.jsx";
 import { useForm } from "react-hook-form";
-import Select from "./Select.jsx";
-import appwriteService from "../appwrite/database.js";
+import Select from "../Select.jsx";
+import appwriteService from "../../appwrite/database.js";
 import { useNavigate } from "react-router";
+import { useSelector } from "react-redux";
 
 function PostForm({ post }) {
   const { register, handleSubmit, watch, setValue, control, getValues } =
@@ -16,17 +19,19 @@ function PostForm({ post }) {
       },
     });
   const navigate = useNavigate();
+  const userData = useSelector((state) => state.auth.userData);
+
   const submit = async (data) => {
     if (post) {
       const file = data.image[0]
         ? await appwriteService.uploadFile(data.image[0])
         : null;
       if (file) {
-        appwriteService.deleteFile(post.featuredImage);
+        appwriteService.deleteFile(post.featuredimage);
       }
       const dbPost = await appwriteService.updatePost(post.$id, {
         ...data,
-        featuredImage: file ? file.$id : undefined,
+        featuredimage: file ? file.$id : undefined,
       });
       if (dbPost) {
         navigate(`/post/${dbPost.$id}`);
@@ -36,10 +41,14 @@ function PostForm({ post }) {
 
       if (file) {
         const fileId = file.$id;
-        data.featuredImage = fileId;
+        data.featuredimage = fileId;5
         const dbPost = await appwriteService.createPost({
-          ...data,
-          userId: userData.$id,
+          title: data.title,
+          slug: data.slug,
+          content: data.content,
+          featuredimage: String(data.featuredimage),
+          status: data.status,
+          userid: userData.$id,
         });
 
         if (dbPost) {
@@ -89,35 +98,34 @@ function PostForm({ post }) {
               });
             }}
           />
+          <RTE
+            label="Content :"
+            name="content"
+            control={control}
+            defaultValue={getValues("content")}
+          />
         </div>
         <div className="w-1/3">
           <Input
             label="Featured Image :"
             type="file"
-            className="mb-4"
             accept="image/png, image/jpg, image/jpeg, image/gif"
             {...register("image", { required: !post })}
           />
           {post && (
-            <div className="w-full mb-4">
+            <div>
               <img
-                src={appwriteService.getFilePreview(post.featuredImage)}
+                src={appwriteService.getFilePreview(post.featuredimage)}
                 alt={post.title}
-                className="rounded-lg"
               />
             </div>
           )}
           <Select
             options={["active", "inactive"]}
             label="Status"
-            className="mb-4"
             {...register("status", { required: true })}
           />
-          <Button
-            type="submit"
-            bgColor={post ? "bg-green-500" : undefined}
-            className="w-full"
-          >
+          <Button type="submit" bgColor={post ? "bg-green-500" : undefined}>
             {post ? "Update" : "Submit"}
           </Button>
         </div>

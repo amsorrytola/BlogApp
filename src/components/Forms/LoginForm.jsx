@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import Input from "./Input";
-import authService from "../appwrite/auth.js";
+import Input from "../Input.jsx";
+import authService from "../../appwrite/auth.js";
 import { useDispatch } from "react-redux";
-import { login } from "../store/authSlice";
+import { login } from "../../store/authSlice.js";
 import { useNavigate } from "react-router";
 
 export default function LoginForm() {
@@ -43,7 +43,7 @@ export default function LoginForm() {
         console.log(userData);
         if (userData) {
           dispatch(login(userData));
-          navigate("/");
+          navigate("/all-posts");
         }
       }
     } catch (error) {
