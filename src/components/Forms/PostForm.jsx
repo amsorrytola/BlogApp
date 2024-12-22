@@ -22,39 +22,37 @@ function PostForm({ post }) {
   const userData = useSelector((state) => state.auth.userData);
 
   const submit = async (data) => {
-    if (post) {
-      const file = data.image[0]
-        ? await appwriteService.uploadFile(data.image[0])
-        : null;
-      if (file) {
-        appwriteService.deleteFile(post.featuredimage);
+    try {
+      let fileId = post?.featuredimage;
+
+      if (data.image && data.image[0]) {
+        const file = await appwriteService.uploadFile(data.image[0]);
+        if (file) {
+          fileId = file.$id;
+          if (post?.featuredimage) {
+            appwriteService.deleteFile(post.featuredimage);
+          }
+        }
       }
-      const dbPost = await appwriteService.updatePost(post.$id, {
-        ...data,
-        featuredimage: file ? file.$id : undefined,
-      });
+
+      const postPayload = {
+        title: data.title,
+        slug: data.slug,
+        content: data.content,
+        featuredimage: String(fileId),
+        status: data.status,
+        userid: userData.$id,
+      };
+
+      const dbPost = post
+        ? await appwriteService.updatePost(post.$id, postPayload)
+        : await appwriteService.createPost(postPayload);
+
       if (dbPost) {
         navigate(`/post/${dbPost.$id}`);
       }
-    } else {
-      const file = await appwriteService.uploadFile(data.image[0]);
-
-      if (file) {
-        const fileId = file.$id;
-        data.featuredimage = fileId;5
-        const dbPost = await appwriteService.createPost({
-          title: data.title,
-          slug: data.slug,
-          content: data.content,
-          featuredimage: String(data.featuredimage),
-          status: data.status,
-          userid: userData.$id,
-        });
-
-        if (dbPost) {
-          navigate(`/post/${dbPost.$id}`);
-        }
-      }
+    } catch (error) {
+      console.error("Error while submitting the form:", error);
     }
   };
 
@@ -64,7 +62,7 @@ function PostForm({ post }) {
         .trim()
         .toLowerCase()
         .replace(/[^a-zA-Z\d\s]+/g, "-")
-        .replace(/\s/g, "-");
+        .replace(/\s+/g, "-");
 
     return "";
   }, []);
@@ -80,57 +78,73 @@ function PostForm({ post }) {
   }, [watch, slugTransform, setValue]);
 
   return (
-    <>
-      <form onSubmit={handleSubmit(submit)}>
-        <div className="w-2/3">
+    <div className="p-6 bg-white dark:bg-gray-900 rounded-lg shadow-md">
+      <form
+        onSubmit={handleSubmit(submit)}
+        className="flex flex-wrap gap-8"
+      >
+        {/* Left Section */}
+        <div className="flex-1 md:w-2/3 space-y-6">
           <Input
-            label="Title :"
-            placeholder="Title"
-            {...register("title", { required: true })}
+            label="Title"
+            placeholder="Enter the title"
+            className="block w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none px-4 py-2"
+            {...register("title", { required: "Title is required" })}
           />
           <Input
-            label="Slug :"
-            placeholder="slug"
-            {...register("slug", { required: true })}
-            onInput={(e) => {
-              setValue("slug", slugTransform(e.currentTargent.value), {
-                shoulValidate: true,
-              });
-            }}
+            label="Slug"
+            placeholder="Auto-generated or edit manually"
+            className="block w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none px-4 py-2"
+            {...register("slug", { required: "Slug is required" })}
+            onInput={(e) =>
+              setValue("slug", slugTransform(e.currentTarget.value), {
+                shouldValidate: true,
+              })
+            }
           />
           <RTE
-            label="Content :"
+            label="Content"
             name="content"
             control={control}
             defaultValue={getValues("content")}
           />
         </div>
-        <div className="w-1/3">
+
+        {/* Right Section */}
+        <div className="flex-1 md:w-1/3 space-y-6">
           <Input
-            label="Featured Image :"
+            label="Featured Image"
             type="file"
             accept="image/png, image/jpg, image/jpeg, image/gif"
+            className="block w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none px-4 py-2"
             {...register("image", { required: !post })}
           />
-          {post && (
-            <div>
+          {post?.featuredimage && (
+            <div className="mt-4">
               <img
                 src={appwriteService.getFilePreview(post.featuredimage)}
                 alt={post.title}
+                className="w-full h-auto rounded-lg shadow-md"
               />
             </div>
           )}
           <Select
             options={["active", "inactive"]}
             label="Status"
-            {...register("status", { required: true })}
+            className="block w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none px-4 py-2"
+            {...register("status", { required: "Status is required" })}
           />
-          <Button type="submit" bgColor={post ? "bg-green-500" : undefined}>
-            {post ? "Update" : "Submit"}
+          <Button
+            type="submit"
+            className={`block w-full px-4 py-2 rounded-md shadow-md font-semibold text-white focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+              post ? "bg-green-500 hover:bg-green-600" : "bg-blue-500 hover:bg-blue-600"
+            }`}
+          >
+            {post ? "Update Post" : "Create Post"}
           </Button>
         </div>
       </form>
-    </>
+    </div>
   );
 }
 
